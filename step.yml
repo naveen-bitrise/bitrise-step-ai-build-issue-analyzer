@@ -1,0 +1,228 @@
+#
+# A couple of useful guides & docs:
+#
+# - Main Bitrise CLI docs: https://github.com/bitrise-io/bitrise/tree/master/_docs
+# - Step Development Guideline: https://github.com/bitrise-io/bitrise/blob/master/_docs/step-development-guideline.md
+# - Bitrise.yml format spec: https://github.com/bitrise-io/bitrise/blob/master/_docs/bitrise-yml-format-spec.md
+# - Bitrise docs: http://devcenter.bitrise.io/
+# - Bitrise CLI guides: http://devcenter.bitrise.io/bitrise-cli/
+
+title: |-
+  AIIssueDebugger
+summary: |
+  Debug build failure issue using Claude Code
+description: |
+  Collecting logs for AI Step
+website: https://github.com/bitrise-io/bitrise-ai-workflows/log-fetcher-step
+source_code_url: https://github.com/bitrise-io/bitrise-ai-workflows/log-fetcher-step
+support_url: https://github.com/bitrise-io/bitrise-ai-workflows/log-fetcher-step
+
+# If this step should be available only for certain project types
+# just uncomment this `project_type_tags` section and include all the
+# project types supported by the step. If the step can be used for all
+# project types then you can just remove this section.
+# If no `project_type_tags` specified (or specified as an empty array)
+# that means the step can be used for any project type.
+# You can find more information about project type tags in the Step Development Guideline:
+# https://github.com/bitrise-io/bitrise/blob/master/_docs/step-development-guideline.md
+#
+# project_type_tags:
+#   - ios
+#   - macos
+#   - android
+#   - xamarin
+#   - react-native
+#   - cordova
+#   - ionic
+#   - flutter
+
+# Type tags are used for categorizing steps, for easier step discovery in Step Libraries.
+# You can find more information about type tags in the Step Development Guideline:
+# https://github.com/bitrise-io/bitrise/blob/master/_docs/step-development-guideline.md
+type_tags:
+  - utility
+
+# These properties define whether a Step is run in a given Workflow or not.
+# You can find more information about this in the documentation here:
+# https://devcenter.bitrise.io/en/steps-and-workflows/developing-your-own-bitrise-step/developing-a-new-step.html#setting-conditions-for-running-the-step
+#
+# is_always_run: false
+# is_skippable: false
+# run_if: ""
+
+# Use the `deps` property to declare dependencies that you can fetch from an OS dependency manager.
+# You can find more information about this in the documentation here:
+# https://devcenter.bitrise.io/en/steps-and-workflows/developing-your-own-bitrise-step/developing-a-new-step.html#submodules-and-step-dependencies
+#
+# deps:
+#   brew:
+#   - name: cmake
+#   apt_get:
+#   - name: cmake
+
+
+toolkit:
+  go:
+    package_name: github.com/bitrise-io/bitrise-ai-workflows/log-fetcher-step
+
+
+inputs:
+  - interval: ''
+    opts:
+      title: "Interval of the log fetching"
+      summary: Stuff
+      description: |
+        Stuff
+      is_expand: true
+      is_required: false
+  - output_file: 'build.log'
+    opts:
+      title: "File name"
+      summary: Stuff
+      description: |
+        Stuff
+      is_expand: true
+      is_required: false
+  - claude_api_key: "$ANTHROPIC_API_KEY"
+    opts:
+      title: "Claude API Key"
+      summary: "API key for Anthropic's Claude API"
+      description: |
+        API key for Anthropic's Claude API, required for running Claude Code.
+        Can be obtained from https://console.anthropic.com/settings/keys
+      is_expand: true
+      is_required: true
+      is_sensitive: true
+
+  - review_prompt: |
+      You are a code reviewer reviewing the changes in the pull request.
+      
+      When referencing code always include the location of the referenced code (file and line number in file).
+      
+      Use emojis for easier visual scan-through.
+
+      Please review the build logs in: ai-log.log, the workflow configuration file, and the source code files under $BITRISE_SOURCE_DIR, and explain most likely root cause and then provide a bullet point list of issues and improvement ideas. Use markdown format.
+      
+    opts:
+      title: "Review Prompt"
+      summary: "Customizable prompt for the AI Debugger"
+      description: |
+        The prompt to send to Claude Code when reviewing the code changes.
+        This can be customized to focus on specific aspects of the code review.
+      is_expand: true
+      is_required: true
+
+  - context_files: ""
+    opts:
+      title: "Context Files"
+      summary: "Additional files to include as context for the AI review. For example if you have a code review guide, or a style guide, you can include it here."
+      description: |
+        Specify one or more files to include as additional context for the AI review.
+        Multiple files can be listed, separated by newlines.
+        If left empty, no additional context will be included.
+      is_expand: true
+      is_required: false
+
+  - git_branch_dest: "$BITRISEIO_GIT_BRANCH_DEST"
+    opts:
+      category: Debug
+      title: "Destination Branch"
+      summary: "The destination branch of the pull request"
+      description: |
+        The destination branch of the pull request (e.g., main, master).
+        Default is $BITRISEIO_GIT_BRANCH_DEST, which is set by Bitrise automatically.
+      is_expand: true
+      is_required: true
+
+  - git_branch_src: "$BITRISE_GIT_BRANCH"
+    opts:
+      category: Debug
+      title: "Source Branch"
+      summary: "The source branch of the pull request"
+      description: |
+        The source branch of the pull request.
+        Default is $BITRISE_GIT_BRANCH, which is set by Bitrise automatically.
+      is_expand: true
+      is_required: true
+
+  - deploy_dir: "$BITRISE_DEPLOY_DIR"
+    opts:
+      category: Debug
+      title: "Deploy Directory"
+      summary: "Directory where output files will be saved"
+      description: |
+        Directory where the diff and review output files will be saved.
+        Default is $BITRISE_DEPLOY_DIR, which is set by Bitrise automatically.
+      is_expand: true
+      is_required: true
+      is_dont_change_value: true
+
+  - bitrise_api_token: "$BITRISE_API_TOKEN"
+    opts:
+      category: Debug
+      title: "Bitrise API Token"
+      summary: "Token for API Access"
+      description: |
+        Token for accessing Bitrise API.
+      is_expand: true
+      is_required: false
+      is_sensitive: true
+      is_dont_change_value: true
+
+  - analyze_log_of_failed_step_only: "true"
+    opts:
+      title: "Analyze logs of Failed Step Only"
+      summary: "Extract logs only from the failed step to reduce log volume"
+      description: |
+        When enabled, the step will extract logs only from the failed step (using $BITRISE_FAILED_STEP_TITLE) 
+        instead of analyzing the entire build log. This significantly reduces the amount of data sent 
+        to Claude Code, making analysis faster and more focused.
+        
+        Recommended: true for large builds with many steps.
+      is_expand: true
+      is_required: false
+      value_options:
+        - "true"
+        - "false"
+
+  - step_log_filter_patterns_enabled: "true"
+    opts:
+      title: "Enable Step Log Filter Patterns"
+      summary: "Enable intelligent filtering based on step type"
+      description: |
+        When enabled, logs will be filtered using keywords specific to the step type.
+        For example, steps with "xcode" in the title will focus on Xcode-specific errors.
+      is_expand: true
+      is_required: false
+      value_options:
+        - "true"
+        - "false"
+
+  - step_log_filter_patterns: |
+      xcode: xcodebuild,error:,fatal error:,FAILED,BUILD FAILED,Compile,CompileSwift,Ld ,libtool,codesign,Test Case,Test Suite,ASSERT,XCTAssert
+      android: gradlew,gradle,BUILD FAILED,FAILURE:,Task :,compileDebug,assembleDebug,lint,test,Error:,Exception
+      git: CONFLICT,fatal:,Merge failed,refusing to merge,git,checkout,fetch,merge,rebase,unrelated histories,Auto-merging
+    opts:
+      title: "Step Log Filter Patterns"
+      summary: "Keywords to focus on for steps containing specific terms in their titles"
+      description: |
+        Configure which keywords to focus on when filtering logs for steps based on their titles.
+        Format: one step type per line, with comma-separated keywords to look for.
+        
+        How it works:
+        - If step title contains "ios" or "xcode" → focus on iOS/Xcode build errors
+        - If step title contains "android" → focus on Android/Gradle build errors  
+        - If step title contains "git" → focus on Git merge conflicts and repository issues
+        
+        You can customize these patterns or add new step types as needed.
+      is_expand: true
+      is_required: false
+
+outputs:
+  - BITRISE_AI_REVIEW:
+    opts:
+      title: "AI Review Result"
+      summary: "The complete AI review of the code changes"
+      description: |
+        The complete AI review of the code changes, which can be used by subsequent steps.
+        For example, to post the review as a PR comment.
