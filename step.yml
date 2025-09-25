@@ -67,7 +67,7 @@ toolkit:
 
 
 inputs:
-  - interval: ''
+  - interval: '10'
     opts:
       title: "Interval of the log fetching"
       summary: Stuff
@@ -75,6 +75,7 @@ inputs:
         Stuff
       is_expand: true
       is_required: false
+
   - output_file: 'build.log'
     opts:
       title: "File name"
@@ -83,6 +84,7 @@ inputs:
         Stuff
       is_expand: true
       is_required: false
+
   - claude_api_key: "$ANTHROPIC_API_KEY"
     opts:
       title: "Claude API Key"
