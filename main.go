@@ -67,14 +67,31 @@ func main() {
 
 	// Continue fetching logs until the build is finished
 	for {
+		fmt.Printf("🔄 Fetching logs from position: %d\n", position)
 		logResponse, err := fetchLogChunk(token, appSlug, buildSlug, position)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error fetching logs: %v\n", err)
 			os.Exit(1)
 		}
 
+		fmt.Printf("📦 Received %d chunks, IsArchived: %t\n", len(logResponse.LogChunks), logResponse.IsArchived)
+		
 		// Process each log chunk
 		if len(logResponse.LogChunks) > 0 {
+			fmt.Printf("📝 Processing chunks with positions: ")
+			for _, chunk := range logResponse.LogChunks {
+				fmt.Printf("%d ", chunk.Position)
+			}
+			fmt.Printf("\n")
+			
+			// Show first chunk content preview
+			firstChunk := logResponse.LogChunks[0]
+			chunkPreview := strings.ReplaceAll(firstChunk.Chunk, "\n", "\\n")
+			if len(chunkPreview) > 100 {
+				chunkPreview = chunkPreview[:100] + "..."
+			}
+			fmt.Printf("🔍 First chunk (pos %d): %s\n", firstChunk.Position, chunkPreview)
+			
 			for _, chunk := range logResponse.LogChunks {
 				if chunk.Chunk != "" {
 					appendChunksToFile(outputFile, []string{chunk.Chunk})
@@ -91,6 +108,8 @@ func main() {
 					fmt.Println("\nFound target message. Collecting a few more lines...")
 				}
 			}
+		} else {
+			fmt.Printf("⚠️  No chunks received\n")
 		}
 		// If the log is archived, we can consider it finished
 		isFinished = logResponse.IsArchived

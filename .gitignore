@@ -1,3 +1,4 @@
 .env
 tests/
 Claude.md
+.DS_Store
